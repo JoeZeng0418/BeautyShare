@@ -1,0 +1,28 @@
+{
+  "name": "beautyshare",
+  "version": "1.0.0",
+  "description": "Cross-Platform mobile app to photoshop with friends simultaneously",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/JoeZeng0418/BeautyShare.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/JoeZeng0418/BeautyShare/issues"
+  },
+  "homepage": "https://github.com/JoeZeng0418/BeautyShare#readme",
+  "dependencies": {
+    "archiver": "^2.1.1",
+    "body-parser": "^1.18.3",
+    "ejs": "^2.6.1",
+    "express": "^4.16.3",
+    "formidable": "^1.2.1",
+    "mongoose": "^5.1.6",
+    "nodemon": "^1.17.5"
+  }
+}
