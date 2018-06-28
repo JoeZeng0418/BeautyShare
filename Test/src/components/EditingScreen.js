@@ -1,0 +1,338 @@
+import React, { Component } from 'react';
+import {
+  StyleSheet,
+  Text,
+  View,
+  TouchableOpacity,
+  Button,
+  Image,
+  ImageBackground,
+  Slider,
+} from 'react-native';
+
+import { Shaders, Node, GLSL } from 'gl-react';
+import { Surface } from 'gl-react-native';
+
+import ImagePicker from 'react-native-image-picker';
+
+// options to choose when rendering the selecting menu
+const options = {
+  title: 'Select a photo',
+  takePhotoButtonTitle: 'Take a photo',
+  chooseFromLibraryButtonTitle: 'Choose from Library',
+  quality: 1
+};
+
+const shaders = Shaders.create({
+    Saturate: {
+        frag: GLSL`
+    precision highp float;
+    varying vec2 uv;
+    uniform sampler2D t;
+    uniform float contrast, saturation, brightness;
+    const vec3 L = vec3(0.2125, 0.7154, 0.0721);
+    void main() {
+      vec4 c = texture2D(t, uv);
+      vec3 brt = c.rgb * brightness;
+      gl_FragColor = vec4(mix(
+      vec3(0.5),
+      mix(vec3(dot(brt, L)), brt, saturation),
+      contrast), c.a);
+  }
+  `
+    }
+});
+export const Saturate = ({ contrast, saturation, brightness, children }) => {
+  //debugger;
+  return (<Node
+          shader={shaders.Saturate}
+          uniforms={{ contrast, saturation, brightness, t: children }}
+      />
+  )};
+
+class EditingScreen extends React.Component {
+  static navigationOptions = ({ navigation }) => ({
+    title: `${navigation.state.params.roomName}`,
+    headerRight: (
+      <Button
+      onPress={
+        ()=> alert("Saved")
+      }
+        title="Save"
+        color="#fff"
+      />
+    ),
+  });
+  constructor(){
+    super();
+    this.state = {
+      contrast: 1,
+      saturation: 1,
+      brightness: 1,
+      imageSource: null,
+      imageWidth: '100%',
+      imageHeight: '100%',
+      showContrast: false,
+      showSaturation: false,
+      showBrightness: false,
+      hasImage: false
+    };
+  }
+  doneEditing(str){
+    if (str=="contrast") {
+      this.setState({
+        showContrast: false
+      });
+    } else if (str=="saturation") {
+      this.setState({
+        showSaturation: false
+      });
+    } else if (str=="brightness") {
+      this.setState({
+        showBrightness: false
+      });
+    }
+  }
+  cancelEditing(str){
+    if (str=="contrast") {
+      this.setState({
+        showContrast: false
+      });
+    } else if (str=="saturation") {
+      this.setState({
+        showSaturation: false
+      });
+    } else if (str=="brightness") {
+      this.setState({
+        showBrightness: false
+      });
+    }
+  }
+  showEditor(str){
+    if (str=="contrast") {
+      this.setState({
+        showContrast: true
+      });
+    } else if (str=="saturation") {
+      this.setState({
+        showSaturation: true
+      });
+    } else if (str=="brightness") {
+      this.setState({
+        showBrightness: true
+      });
+    }
+  }
+  selectPhoto(){
+    /**
+     * The first arg is the options object for customization (it can also be null or omitted for default options),
+     * The second arg is the callback which sends object: response (more info below in README)
+    */
+    ImagePicker.showImagePicker(options, (response) => {
+      console.log('Response = ', response);
+
+      if (response.didCancel) {
+        console.log('User cancelled image picker');
+      }
+      else if (response.error) {
+        console.log('ImagePicker Error: ', response.error);
+      }
+      else if (response.customButton) {
+        console.log('User tapped custom button: ', response.customButton);
+      }
+      else {
+        let source = { uri: response.uri };
+
+        // You can also display the image using data:
+        // let source = { uri: 'data:image/jpeg;base64,' + response.data };
+
+        this.setState({
+          imageSource: source,
+          hasImage: true,
+        });
+      }
+    });
+  }
+  savePhoto(){
+    alert("Saved");
+  }
+  render() {
+    const filter = {
+      contrast: this.state.contrast,
+      saturation: this.state.saturation,
+      brightness: this.state.brightness
+    }
+    return (
+      <View style={styles.container}>
+        <View style={styles.imageBox}>
+          <TouchableOpacity style={{width:'90%',height:'90%',
+          backgroundColor: 'white',
+          justifyContent: 'center',
+          alignItems: 'center',
+          position: 'absolute',
+          bottom: 0}}
+          disabled={this.state.hasImage}
+          onPress={this.selectPhoto.bind(this)}>
+          <Image ref="imageSize" style={styles.image}
+            source={require('./../images/add_image.png')}
+          />
+            <Surface style={{width:this.state.imageWidth,height:this.state.imageHeight}}>
+                <Saturate {...filter}>
+                    {this.state.imageSource}
+                </Saturate>
+            </Surface>
+          </TouchableOpacity>
+        </View>
+        <View style={styles.editorBox}>
+          {(!this.state.showContrast&&!this.state.showBrightness&&!this.state.showSaturation&&this.state.hasImage)&&
+            <View style={{justifyContent:'center',width:'90%',alignItems:'center'}}>
+              <View style={{justifyContent: 'space-between',flexDirection: 'row', width: '100%'}}>
+                <TouchableOpacity style={styles.optionButton} onPress={
+                  ()=>this.showEditor("contrast")
+                }>
+                  <Text style={styles.text}>Contrast</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.optionButton} onPress={
+                  ()=>this.showEditor("saturation")
+                }>
+                  <Text style={styles.text}>Saturation</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.optionButton} onPress={
+                  ()=>this.showEditor("brightness")
+                }>
+                  <Text style={styles.text}>Brightness</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          }
+          {this.state.showContrast&&<View style={{justifyContent:'center',width:'90%',alignItems:'center'}}>
+            <Slider
+              style={{ width: '90%'}}
+              step={0.05}
+              minimumValue={0}
+              maximumValue={2}
+              value={this.state.contrast}
+              onValueChange={val=>this.setState({contrast: val})}
+              minimumTrackTintColor='rgba(255,255,255,1)'
+              maximumTrackTintColor='rgba(255,255,255,0.3)'
+            />
+            <View style={{justifyContent: 'space-between',flexDirection: 'row', width: '100%'}}>
+              <TouchableOpacity style={styles.editingButton} onPress={
+                ()=>this.cancelEditing("contrast")
+              }>
+                <Text style={styles.text}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.editingButton} onPress={
+                ()=>this.doneEditing("contrast")
+              }>
+                <Text style={styles.text}>Done</Text>
+              </TouchableOpacity>
+            </View>
+          </View>}
+          {this.state.showSaturation&&<View style={{justifyContent:'center',width:'90%',alignItems:'center'}}>
+            <Slider
+              style={{ width: '90%' }}
+              step={0.05}
+              minimumValue={0}
+              maximumValue={2}
+              value={this.state.saturation}
+              onValueChange={val=>this.setState({saturation: val})}
+            />
+            <View style={{justifyContent: 'space-between',flexDirection: 'row', width: '100%'}}>
+              <TouchableOpacity style={styles.editingButton} onPress={
+                ()=>this.cancelEditing("saturation")
+              }>
+                <Text style={styles.text}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.editingButton} onPress={
+                ()=>this.doneEditing("saturation")
+              }>
+                <Text style={styles.text}>Done</Text>
+              </TouchableOpacity>
+            </View>
+          </View>}
+          {this.state.showBrightness&&<View style={{justifyContent:'center',width:'90%',alignItems:'center'}}>
+            <Slider
+              style={{ width: '90%' }}
+              step={0.05}
+              minimumValue={0}
+              maximumValue={2}
+              value={this.state.brightness}
+              onValueChange={val=>this.setState({brightness: val})}
+            />
+            <View style={{justifyContent: 'space-between',flexDirection: 'row', width: '100%'}}>
+              <TouchableOpacity style={styles.editingButton} onPress={
+                ()=>this.cancelEditing("brightness")
+              }>
+                <Text style={styles.text}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.editingButton} onPress={
+                ()=>this.doneEditing("brightness")
+              }>
+                <Text style={styles.text}>Done</Text>
+              </TouchableOpacity>
+            </View>
+          </View>}
+
+        </View>
+      </View>
+    );
+  }
+}
+export default EditingScreen;
+
+const styles = StyleSheet.create({
+  bg: {
+    position:'absolute',
+    width: '100%',
+    height: '100%',
+    opacity: 0.7
+  },
+  container: {
+    flex: 1,
+    backgroundColor: 'rgba(40,44,52,1)',
+  },
+  imageBox: {
+    height: '85%',
+    width: '100%',
+    // justifyContent: 'center',
+    alignItems: 'center'
+  },
+  editorBox: {
+    height: '15%',
+    justifyContent: 'space-around',
+    alignItems: 'center'
+  },
+  editingButton: {
+    maxWidth: 100,
+    paddingTop: 5,
+    paddingBottom: 5,
+    borderRadius: 10,
+    // marginTop: 10,
+    borderWidth: 1,
+    borderColor: '#fff'
+  },
+  optionButton: {
+    maxWidth: 200,
+    paddingTop: 5,
+    paddingBottom: 5,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#fff'
+  },
+  text: {
+    textAlign: 'center',
+    fontSize: 15,
+    color: 'white',
+    fontWeight: 'bold',
+    paddingLeft: 10,
+    paddingRight: 10
+  },
+  image: {
+    width: '100%',
+    height: '100%',
+    resizeMode:'contain',
+    position: 'absolute'
+  },
+
+});
