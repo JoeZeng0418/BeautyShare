@@ -15,20 +15,50 @@ app.use(express.static(__dirname + '/public'));
 
 // file upload page
 app.get('/', (req, res) => {
-// app.set('view engine', 'ejs');
+	app.set('view engine', 'ejs');
 	res.sendFile(__dirname + '/public/fileupload.html');
 });
 
 // creates a room document in the database
 // request: username, pin
 // response: roomID
-app.post('/createRoom', (req, res) => {
+app.get('/createRoom/:username/:roomName', (req, res) => {
 	// get the parameters in request
-	var pin = req.body.pin;
+	var username = req.params.username;
+	var roomName = req.params.roomName;
+	// var roomCode = Math.floor(Math.random() * Math.floor(10000));
+	var room = new Room({
+		roomName,
+		users: [{username: username}]
+	});
+	// save to database
+	room.save().then((doc) => {
+		if (!doc) {
+			console.log("Error");
+			res.status(400).send({
+				msg: 'no'
+			});
+		}
+		else {
+			console.log(doc);
+			res.send(
+				{msg: 'yes'});
+		}
+	}).catch((e) => {
+		console.log('duplicate keys');
+		res.status(400).send({
+				msg: 'no'
+			});
+	});
+	
+});
+
+app.post('/createRoom/', (req, res) => {
+	// get the parameters in request
 	var username = req.body.username;
 	// var roomCode = Math.floor(Math.random() * Math.floor(10000));
 	var room = new Room({
-		pincode: pin,
+		// roomName,
 		users: [{username: username}]
 	});
 	// save to database
@@ -60,16 +90,22 @@ app.post('/createRoomByForm', (req, res) => {
 			res.write(doc.id);
 		res.end();
 		});
-	})
-})
+	});
+});
 
 // 
-app.get('/enterRoom/:roomID/:username', (req, res) => {
-	var roomID = req.params.roomID;
+app.get('/enterRoom/:username/:roomName', (req, res) => {
+	var roomName = req.params.roomName;
 	var username = req.params.username;
-	Room.findById(roomID, (err, room) => {
-		if (err) throw err;
+	Room.findOne({roomName: roomName}, (err, room) => {
+		if (err) {
+			throw err;
+			res.send(400);
+		}
 		room.users.push({username: username});
+		room.save();
+		res.send('Entered the room');
+		console.log(room);
 	}).catch((e) => {
 		res.status(404).send();
 	});

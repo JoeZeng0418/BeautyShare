@@ -6,7 +6,10 @@ var userSchema = new Schema({username: String});
 var imageSchema = new Schema({filename: String});
 
 var roomSchema = new Schema({
-	pincode: Number,
+	roomName: {
+		type: String,
+		unique: true
+	},
 	users: [userSchema],
 	images: [imageSchema]
 });
