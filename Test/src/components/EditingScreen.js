@@ -8,7 +8,11 @@ import {
   Image,
   ImageBackground,
   Slider,
+  CameraRoll
 } from 'react-native';
+import SocketIOClient from 'socket.io-client';
+// import CameraRollExtended from 'react-native-store-photos-album'
+
 
 import { Shaders, Node, GLSL } from 'gl-react';
 import { Surface } from 'gl-react-native';
@@ -42,6 +46,7 @@ const shaders = Shaders.create({
   `
     }
 });
+var take = null;
 export const Saturate = ({ contrast, saturation, brightness, children }) => {
   //debugger;
   return (<Node
@@ -56,16 +61,18 @@ class EditingScreen extends React.Component {
     headerRight: (
       <Button
       onPress={
-        ()=> alert("Saved")
+        ()=> take.savePhoto()
       }
         title="Save"
         color="#fff"
       />
     ),
   });
-  constructor(){
-    super();
+  constructor(props){
+    super(props);
+
     this.state = {
+      hostport: 'http://localhost:3000',
       contrast: 1,
       saturation: 1,
       brightness: 1,
@@ -75,8 +82,15 @@ class EditingScreen extends React.Component {
       showContrast: false,
       showSaturation: false,
       showBrightness: false,
-      hasImage: false
+      hasImage: false,
     };
+    this.socket = SocketIOClient(this.state.hostport);
+    this.socket.emit('createNickname', this.props.navigation.state.params.displayName);
+    this.socket.emit('enterRoom', this.props.navigation.state.params.roomName);
+    // Client side to receive message
+    this.socket.on('message', (message) => {
+      alert(message);
+    });
   }
   doneEditing(str){
     if (str=="contrast") {
@@ -154,9 +168,24 @@ class EditingScreen extends React.Component {
     });
   }
   savePhoto(){
-    alert("Saved");
+    alert(CameraRoll.saveToCameraRoll);
+    // CameraRoll.saveToCameraRoll('https://pbs.twimg.com/profile_images/712703916358537217/mcOketun_400x400.jpg', 'photo').then(function(result) {
+    //   console.log('save succeeded ' + result);
+    //   alert(result);
+    // }).catch(function(error) {
+    //   console.log('save failed ' + error);
+    //   alert(error);
+    // });
+    // CameraRollExtended.saveToCameraRoll({uri: 'https://pbs.twimg.com/profile_images/712703916358537217/mcOketun_400x400.jpg', album: 'Test'}, 'photo')
+  }
+  showLog(){
+    alert("showLog");
+  }
+  sendImage(){
+    this.socket.emit('image', )
   }
   render() {
+    take = this
     const filter = {
       contrast: this.state.contrast,
       saturation: this.state.saturation,
@@ -291,6 +320,11 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: 'rgba(40,44,52,1)',
+  },
+  log: {
+    position: 'absolute',
+    right: 80,
+    top: 30,
   },
   imageBox: {
     height: '85%',

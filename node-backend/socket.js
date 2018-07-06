@@ -11,19 +11,21 @@ app.get('/', (req, res) => {
 });
 
 io.on('connection', (socket) => {
+	console.log("having a new connection");
 	socket.on('createNickname', (name) => {
 		//console.log("in createNickname");
 		clients[socket.id] = name;
 	});
 
-	socket.on('enterRoom', (roomNum) => {		
+	socket.on('enterRoom', (roomNum) => {
+		console.log(clients[socket.id]+" enter the room "+roomNum);
 		socket.join(roomNum, () => {
 		    //console.log("room num: " + roomNum);
 		    clientsRooms[socket.id] = roomNum;
 		    var msg = "".concat(clients[socket.id], ' entered the room!')
 			//console.log("cancat: " + msg);
 			io.to(roomNum).emit('message', msg);
-		});	
+		});
 	});
 
 	socket.on('other event', (msg) => {
@@ -35,6 +37,9 @@ io.on('connection', (socket) => {
 		io.to(clientsRooms[socket.id]).emit('message', clients[socket.id] + ' left the room.');
 		clients.delete(socket.id);
 		clientsRooms.delete(socket.id);
+	});
+	socket.on('image', ()=>{
+		socket.emit('image', { image: true, buffer: buf.toString('base64') });
 	});
 });
 

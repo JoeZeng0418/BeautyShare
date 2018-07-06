@@ -16,25 +16,20 @@ import {
 } from 'react-navigation';
 
 import HomeScreen from './src/components/HomeScreen';
-import UploadImageScreen from './src/components/UploadImageScreen';
 import EditingScreen from './src/components/EditingScreen';
 import CreateRoomScreen from './src/components/CreateRoomScreen';
 import EnterRoomScreen from './src/components/EnterRoomScreen';
-
-import EditorContrast from './src/editors/EditorContrast';
 
 const AppStack = StackNavigator(
   {
     HomeScreen: { screen: HomeScreen },
     CreateRoomScreen: { screen: CreateRoomScreen },
     EnterRoomScreen: { screen: EnterRoomScreen },
-    UploadImageScreen: { screen: UploadImageScreen },
     EditingScreen: { screen: EditingScreen },
-    EditorContrast: { screen: EditorContrast},
   },
   {
-    // initialRouteName: 'HomeScreen',
     initialRouteName: 'CreateRoomScreen',
+    // initialRouteName: '',
     navigationOptions: {
       headerStyle: {
         // backgroundColor: '#FF876C',

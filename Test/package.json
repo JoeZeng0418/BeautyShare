@@ -12,10 +12,13 @@
     "gl-react-native": "^3.15.0",
     "react": "16.3.1",
     "react-native": "0.55.4",
+    "react-native-camera": "^1.1.4",
     "react-native-file-upload": "^1.0.4",
     "react-native-image-picker": "^0.26.10",
+    "react-native-store-photos-album": "^0.1.2",
     "react-native-webgl": "^0.8.0",
-    "react-navigation": "^2.4.1"
+    "react-navigation": "^2.4.1",
+    "socket.io-client": "^2.1.1"
   },
   "devDependencies": {
     "babel-jest": "23.0.1",

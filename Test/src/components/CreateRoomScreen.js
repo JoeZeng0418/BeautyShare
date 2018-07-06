@@ -27,6 +27,7 @@ export class CreateRoomScreen extends React.Component {
       bgImage:require('./../images/bg2.jpg'),
       roomName: "",
       displayName: "",
+      hostport: 'http://172.20.10.2:3000/'
     }
   }
 
@@ -34,7 +35,32 @@ export class CreateRoomScreen extends React.Component {
     title: 'Create Room',
     // header: null
   };
-
+  createRoom(){
+    console.log("sending room info");
+    // fetch(this.state.hostport+'createRoom/'+this.state.roomName+'/'+this.state.displayName)
+    // .then((response) => response.json())
+    // .then((responseJson) => {
+    //   console.log(responseJson);
+    //   if (responseJson.msg=="yes") {
+    //     this.props.navigation.navigate('EditingScreen',
+    //     {
+    //       roomName: this.state.roomName,
+    //       displayName: this.state.displayName
+    //     })
+    //   } else {
+    //     // used roomName
+    //     alert("The room name is used!");
+    //   }
+    // })
+    // .catch((error) => {
+    //   console.error(error);
+    // });
+    this.props.navigation.navigate('EditingScreen',
+    {
+      roomName: this.state.roomName,
+      displayName: this.state.displayName
+    })
+  }
   render() {
     return (
       <ImageBackground source={this.state.bgImage}
@@ -59,11 +85,7 @@ export class CreateRoomScreen extends React.Component {
           />
           <TouchableOpacity
             style={styles.button}
-            onPress={()=>this.props.navigation.navigate('EditingScreen',
-            {
-              roomName: this.state.roomName,
-              displayName: this.state.displayName
-            })}>
+            onPress={()=>this.createRoom()}>
             <Text style={styles.text}>Create</Text>
           </TouchableOpacity>
         </View>
