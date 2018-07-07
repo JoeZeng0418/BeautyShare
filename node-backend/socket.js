@@ -1,4 +1,5 @@
 const app = require('express')();
+const bodyParser = require('body-parser');
 const http = require('http').Server(app);
 const io = require('socket.io')(http);
 
@@ -9,9 +10,61 @@ var clientsRooms = new Map();
 app.get('/', (req, res) => {
 	res.sendFile(__dirname + '/index.html');
 });
+// creates a room document in the database
+// request: username, pin
+// response: roomID
+app.get('/createRoom/:username/:roomName', (req, res) => {
+	// get the parameters in request
+	var username = req.params.username;
+	var roomName = req.params.roomName;
+	// var roomCode = Math.floor(Math.random() * Math.floor(10000));
+	var room = new Room({
+		roomName,
+		users: [{username: username}]
+	});
+	// save to database
+	room.save().then((doc) => {
+		if (!doc) {
+			console.log("Error");
+			res.status(400).send({
+				msg: 'no'
+			});
+		}
+		else {
+			console.log(doc);
+			res.send(
+				{msg: 'yes'});
+		}
+	}).catch((e) => {
+		console.log('duplicate keys');
+		res.status(400).send({
+				msg: 'no'
+			});
+	});
+	
+});
+
+app.get('/enterRoom/:username/:roomName', (req, res) => {
+	var roomName = req.params.roomName;
+	var username = req.params.username;
+	Room.findOne({roomName: roomName}, (err, room) => {
+		if (err) {
+			throw err;
+			res.send(400);
+		}
+		room.users.push({username: username});
+		room.save();
+		res.send('Entered the room');
+		console.log(room);
+	}).catch((e) => {
+		res.status(404).send();
+	});
+});
+
 
 io.on('connection', (socket) => {
 	console.log("having a new connection");
+	
 	socket.on('createNickname', (name) => {
 		//console.log("in createNickname");
 		clients[socket.id] = name;
@@ -22,7 +75,7 @@ io.on('connection', (socket) => {
 		socket.join(roomNum, () => {
 		    //console.log("room num: " + roomNum);
 		    clientsRooms[socket.id] = roomNum;
-		    var msg = "".concat(clients[socket.id], ' entered the room!')
+		    var msg = "".concat(clients[socket.id], ' entered the room '+roomNum);
 			//console.log("cancat: " + msg);
 			io.to(roomNum).emit('message', msg);
 		});
