@@ -2,6 +2,11 @@ const app = require('express')();
 const bodyParser = require('body-parser');
 const http = require('http').Server(app);
 const io = require('socket.io')(http);
+var path = require('path');
+var fs = require('fs');
+var formidable = require('formidable');
+
+const IMAGE_PATH = 'files/';
 
 // var room = '1234';
 var clients = new Map();
@@ -60,6 +65,38 @@ app.get('/enterRoom/:username/:roomName', (req, res) => {
 		res.status(404).send();
 	});
 });
+
+// takes the file in the form and store it to the file system
+// 		roomID: id of current user's room
+// 		filetoupload: the image file that th user is going to upload
+app.post('/upload', (req, res) => {
+	var form = new formidable.IncomingForm();
+  	form.parse(req, (err, fields, files) => {
+  	  var roomName = fields.roomName;
+  	  // save to local file system
+  	  var oldpath = files.photo.path;
+  	  var newpath = IMAGE_PATH + files.photo.name;
+  	  fs.rename(oldpath, newpath, (err) => {
+  	  	if (err) throw err;
+  	  });
+  	  console.log('New file received');
+  	  // update the databse
+  	  // Room.findById(roomID, (err, room) => {
+  	  // 	if (err) {
+  	  // 		return res.status(404).send();
+  	  // 	}
+  	  // 	room.images.push({filename: files.filetoupload.name});
+  	  // 	console.log(room);
+  	  // 	room.save();
+  	  // }).catch((e) => {
+  	  // 	res.status(400).send();
+  	  // });
+  	  res.write('File uploaded');
+  	  res.end();
+  	});
+});
+
+
 
 
 io.on('connection', (socket) => {
