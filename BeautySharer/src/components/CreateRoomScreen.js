@@ -27,7 +27,7 @@ export class CreateRoomScreen extends React.Component {
       bgImage:require('./../images/bg2.jpg'),
       roomName: "",
       displayName: "",
-      hostport: 'http://172.20.10.2:3000/'
+      hostport: 'http://localhost:3000/'
     }
   }
 

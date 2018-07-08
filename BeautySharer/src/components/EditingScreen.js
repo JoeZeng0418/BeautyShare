@@ -8,7 +8,8 @@ import {
   Image,
   ImageBackground,
   Slider,
-  CameraRoll
+  CameraRoll,
+  Dimensions
 } from 'react-native';
 import SocketIOClient from 'socket.io-client';
 // import CameraRollExtended from 'react-native-store-photos-album'
@@ -18,6 +19,7 @@ import { Shaders, Node, GLSL } from 'gl-react';
 import { Surface } from 'gl-react-native';
 
 import ImagePicker from 'react-native-image-picker';
+
 
 // options to choose when rendering the selecting menu
 const options = {
@@ -76,7 +78,7 @@ class EditingScreen extends React.Component {
     super(props);
 
     this.state = {
-      hostport: 'http://localhost:3000',
+      hostport: 'http://localhost:3000/',
       contrast: 1,
       saturation: 1,
       brightness: 1,
@@ -94,6 +96,36 @@ class EditingScreen extends React.Component {
     // Client side to receive message
     this.socket.on('message', (message) => {
       alert(message);
+    });
+    this.socket.on('imageReady', (imageFilename) => {
+      var _uri = this.state.hostport+"images/"+imageFilename;
+      Image.getSize(_uri, (width, height) => {
+        // determine the shape of the image for precise display
+        var w = null;
+        var h = null;
+        var ratio = height/width
+        if (width<height) {
+          h = '100%';
+          // w = ((100/ratio).toFixed(2)).toString()+"%";
+          w = Dimensions.get('window').height*0.85/ratio;
+        } else {
+          w = '100%';
+          h = Dimensions.get('window').width*ratio;
+        }
+        this.setState({
+          imageSource: {uri: _uri},
+          imageHeight: h,
+          imageWidth: w,
+          hasImage: true,
+        })
+      });
+    });
+    this.socket.on('modifyImage', (json) => {
+      this.setState({
+        contrast: json.contrast,
+        saturation: json.saturation,
+        brightness: json.brightness
+      });
     });
   }
   doneEditing(str){
@@ -163,52 +195,68 @@ class EditingScreen extends React.Component {
 
         // You can also display the image using data:
         // let source = { uri: 'data:image/jpeg;base64,' + response.data };
-
-        this.setState({
-          imageSource: source,
-          hasImage: true,
+        const data = new FormData();
+        data.append('roomName', this.props.navigation.state.params.roomName); // you can append anyone.
+        data.append('photo', {
+          uri: response.uri,
+          type: 'image/jpeg', // or photo.type
+          name: 'test'
+        });
+        fetch(this.state.hostport+"upload", {
+          method: 'post',
+          body: data
+        }).then((response) => response.json()).then((responseJson) => {
+          if (responseJson.msg=="ok") {
+            this.socket.emit('imageReady', responseJson.imageFilename);
+          }
+          // this.setState({
+          //   imageSource: source,
+          //   hasImage: true,
+          // });
         });
       }
     });
   }
   savePhoto(){
     // alert(CameraRoll.saveToCameraRoll);
-    CameraRoll.saveToCameraRoll('https://pbs.twimg.com/profile_images/712703916358537217/mcOketun_400x400.jpg', 'photo').then(function(result) {
-      console.log('save succeeded ' + result);
-      alert("saved");
-    }).catch(function(error) {
-      console.log('save failed ' + error);
-      alert(error);
-    });
+    // CameraRoll.saveToCameraRoll('https://pbs.twimg.com/profile_images/712703916358537217/mcOketun_400x400.jpg', 'photo').then(function(result) {
+    //   console.log('save succeeded ' + result);
+    //   alert("saved");
+    // }).catch(function(error) {
+    //   console.log('save failed ' + error);
+    //   alert(error);
+    // });
+    alert("saved");
     // CameraRollExtended.saveToCameraRoll({uri: 'https://pbs.twimg.com/profile_images/712703916358537217/mcOketun_400x400.jpg', album: 'Test'}, 'photo')
   }
-  showLog(){
-    alert("showLog");
-  }
-  sendImage(){
-    this.socket.emit('image', )
+  sendImageChange(){
+      this.socket.emit('modifyImage', {
+        contrast: this.state.contrast,
+        saturation: this.state.saturation,
+        brightness: this.state.brightness
+      });
   }
   render() {
-    take = this
+    take = this;
     const filter = {
       contrast: this.state.contrast,
       saturation: this.state.saturation,
       brightness: this.state.brightness
-    }
+    };
     return (
       <View style={styles.container}>
         <View style={styles.imageBox}>
-          <TouchableOpacity style={{width:'90%',height:'90%',
-          backgroundColor: 'white',
+          <TouchableOpacity style={{width:'100%',height:'100%',
+          backgroundColor: 'rgba(40,44,52,1)',
           justifyContent: 'center',
           alignItems: 'center',
           position: 'absolute',
           bottom: 0}}
           disabled={this.state.hasImage}
           onPress={this.selectPhoto.bind(this)}>
-          <Image ref="imageSize" style={styles.image}
-            source={require('./../images/add_image.png')}
-          />
+            {!this.state.hasImage&&<Image ref="imageSize" style={styles.image}
+              source={require('./../images/add_image.png')}
+            />}
             <Surface style={{width:this.state.imageWidth,height:this.state.imageHeight}}>
                 <Saturate {...filter}>
                     {this.state.imageSource}
@@ -246,6 +294,7 @@ class EditingScreen extends React.Component {
               maximumValue={2}
               value={this.state.contrast}
               onValueChange={val=>this.setState({contrast: val})}
+              onSlidingComplete={val=>this.sendImageChange()}
               minimumTrackTintColor='rgba(255,255,255,1)'
               maximumTrackTintColor='rgba(255,255,255,0.3)'
             />
@@ -270,6 +319,9 @@ class EditingScreen extends React.Component {
               maximumValue={2}
               value={this.state.saturation}
               onValueChange={val=>this.setState({saturation: val})}
+              onSlidingComplete={val=>this.sendImageChange()}
+              minimumTrackTintColor='rgba(255,255,255,1)'
+              maximumTrackTintColor='rgba(255,255,255,0.3)'
             />
             <View style={{justifyContent: 'space-between',flexDirection: 'row', width: '100%'}}>
               <TouchableOpacity style={styles.editingButton} onPress={
@@ -292,6 +344,9 @@ class EditingScreen extends React.Component {
               maximumValue={2}
               value={this.state.brightness}
               onValueChange={val=>this.setState({brightness: val})}
+              onSlidingComplete={val=>this.sendImageChange()}
+              minimumTrackTintColor='rgba(255,255,255,1)'
+              maximumTrackTintColor='rgba(255,255,255,0.3)'
             />
             <View style={{justifyContent: 'space-between',flexDirection: 'row', width: '100%'}}>
               <TouchableOpacity style={styles.editingButton} onPress={

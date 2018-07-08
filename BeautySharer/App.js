@@ -28,7 +28,7 @@ const AppStack = StackNavigator(
     EditingScreen: { screen: EditingScreen },
   },
   {
-    initialRouteName: 'HomeScreen',
+    initialRouteName: 'CreateRoomScreen',
     // initialRouteName: '',
     navigationOptions: {
       headerStyle: {
