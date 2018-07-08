@@ -125,10 +125,18 @@ io.on('connection', (socket) => {
 			io.to(roomNum).emit('message', msg);
 		});
 	});
+
+	// when someone upload the image for the room, send it to everyone in that room
 	socket.on('imageReady', (imageFilename) => {
 		var roomNum = clientsRooms[socket.id];
-		console.log("image is ready in room "+roomNum);
-		io.to(roomNum).emit('image', imageFilename);
+		console.log(imageFilename+" is ready in room "+roomNum);
+		io.to(roomNum).emit('imageReady', imageFilename);
+	});
+
+	// the change of the image on one client is sent to every one in real time
+	socket.on('modifyImage', (json) => {
+		var roomNum = clientsRooms[socket.id];
+		io.to(roomNum).emit('modifyImage', json);
 	});
 
 	socket.on('other event', (msg) => {
