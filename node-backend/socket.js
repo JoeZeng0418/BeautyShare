@@ -6,7 +6,7 @@ var path = require('path');
 var fs = require('fs');
 var formidable = require('formidable');
 
-const IMAGE_PATH = 'files/';
+const IMAGE_PATH = 'images/';
 
 // var room = '1234';
 var clients = new Map();
@@ -65,6 +65,9 @@ app.get('/enterRoom/:username/:roomName', (req, res) => {
 		res.status(404).send();
 	});
 });
+app.get('/images/:imageFilename', (req, res) => {
+	res.sendFile(path.resolve(path.resolve(__dirname,'images/'+req.params.imageFilename)));
+});
 
 // takes the file in the form and store it to the file system
 // 		roomID: id of current user's room
@@ -75,7 +78,9 @@ app.post('/upload', (req, res) => {
   	  var roomName = fields.roomName;
   	  // save to local file system
   	  var oldpath = files.photo.path;
-  	  var newpath = IMAGE_PATH + files.photo.name;
+  	  var d = new Date();
+	  var random_filename = d.getTime()+".jpg";
+  	  var newpath = IMAGE_PATH + random_filename;
   	  fs.rename(oldpath, newpath, (err) => {
   	  	if (err) throw err;
   	  });
@@ -91,8 +96,11 @@ app.post('/upload', (req, res) => {
   	  // }).catch((e) => {
   	  // 	res.status(400).send();
   	  // });
-  	  res.write('File uploaded');
-  	  res.end();
+  	  res.send({
+  	  	"msg": "ok",
+  	  	"imageFilename": random_filename
+  	  });
+  	  // res.end();
   	});
 });
 
@@ -117,6 +125,11 @@ io.on('connection', (socket) => {
 			io.to(roomNum).emit('message', msg);
 		});
 	});
+	socket.on('imageReady', (imageFilename) => {
+		var roomNum = clientsRooms[socket.id];
+		console.log("image is ready in room "+roomNum);
+		io.to(roomNum).emit('image', imageFilename);
+	});
 
 	socket.on('other event', (msg) => {
 		//msg is the modification client has done
@@ -132,6 +145,26 @@ io.on('connection', (socket) => {
 		socket.emit('image', { image: true, buffer: buf.toString('base64') });
 	});
 });
+// helper
+function removeAllImages(){
+	var directory = "images";
+	fs.readdir(directory, (err, files) => {
+	  if (err) throw err;
+
+	  for (const file of files) {
+	    fs.unlink(path.join(directory, file), err => {
+	      if (err) throw err;
+	      console.log('successfully deleted '+file);
+	    });
+	  }
+	});
+}
+function removeFile(filePath){
+	fs.unlink(filePath, (err) => {
+		if (err) throw err;
+		console.log('successfully deleted '+filePath);
+	});
+}
 
 http.listen(3000, () => {
 	console.log('listening on *: 3000');
