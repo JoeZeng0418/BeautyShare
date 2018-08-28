@@ -13,6 +13,7 @@ Incorporated React Native OpenGL package to realize photoshopping functions such
 Utilized Socket.io to achieve fast multi-users real time communication for photo editing
 
 
+SIMPLE INSTALLATION:
 
 Need to have node, npm installed;
 
